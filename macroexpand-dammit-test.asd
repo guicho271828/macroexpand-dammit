@@ -8,5 +8,4 @@
 (defsystem macroexpand-dammit-test
   :depends-on (:macroexpand-dammit :fiveam)
   :components
-  ((:file :test))
-  :perform (load-op :after (op c) (clear-system c)))
+  ((:file :test)))

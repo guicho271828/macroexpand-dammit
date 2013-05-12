@@ -1,13 +1,11 @@
 
-
-
 (defpackage macroexpand-dammit-test
   (:use :cl :macroexpand-dammit :fiveam))
 
 (in-package :macroexpand-dammit-test)
 
-(def-suite macroexpand-dammit)
-(in-suite macroexpand-dammit)
+(def-suite :macroexpand-dammit-test)
+(in-suite :macroexpand-dammit-test)
 (test nested
   "testing highly nested macrolets"
   (macrolet ((a () :b))
