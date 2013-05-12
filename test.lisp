@@ -27,7 +27,7 @@
        (macrolet ((c (&body body &environment env)
 		    (let ((expansion (macroexpand-dammit body env)))
 		      (is (equalp expansion
-				  '((PRINT :b) (PRINT :b))))
+				  '((progn (PRINT :b) (PRINT :b)))))
 		      `(progn ,@expansion))))
 
 	 (macrolet ((d () `(a)))
