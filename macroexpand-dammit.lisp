@@ -179,12 +179,6 @@
 	,@(when rop-p
 		`(',read-only-p))))
 
-(defmacro with-native-macroexpansion (body &environment env)
-  ;; env contains the outer macro binding
-  (call-with-native-macroexpansion body env))
-(defun call-with-native-macroexpansion (body env)
-  (call-m-list body env))
-
 (defhandler 
     (macrolet 
 	symbol-macrolet 
@@ -194,7 +188,7 @@
   `(maybe-locally
     (with-imposed-bindings
       (,macrolet ,bindings
-	(m-list ,body)))))
+	(m-list ,@body)))))
 
 (defun clean-fbindings (bindings)
   "Return a set of bindings that always defaults to nil"
