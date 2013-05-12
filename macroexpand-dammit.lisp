@@ -345,8 +345,34 @@
 (defmacro m-list (&body body &environment *env*)
   `(list ,@(e-list body)))
 
+(defun walk-tree (fn tree)
+  (funcall fn tree
+	   (lambda (branch)
+	     (mapcar (lambda (branch)
+		       (walk-tree fn branch))
+		     branch))))
+
+(defun macroexpand-all-except-macrobindings (body env)
+  (walk-tree
+   (lambda (subform cont)
+     (let ((expansion (macroexpand subform env)))
+       (if (and (consp expansion)
+		(not (member (car expansion)
+			     '(declare))))
+	   (if (member (car expansion)
+		       '(macrolet symbol-macrolet))
+	       ;; ignore macrolet and symbol-macrolet
+	       `(,(car expansion) ,(cadr expansion)
+		  ,@(funcall cont (cddr expansion)))
+	       (funcall cont expansion))
+	   expansion)))
+   body))
+
 (defun macroexpand-dammit (form &optional *env*)
-  (eval (e form)))
+  (let ((evalform (e form)))
+    (macroexpand-all-except-macrobindings
+     (eval evalform)
+     *env*)))
 
 (defmacro macroexpand-dammit-as-macro (form)
   `(m ,form))
