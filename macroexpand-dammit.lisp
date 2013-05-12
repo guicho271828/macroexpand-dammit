@@ -50,10 +50,7 @@
 	  (t
 	   name))))
 
-(defmacro with-imposed-bindings (&body body &environment *env*)
-  (call-with-imposed-bindings body *env*))
-
-(defun call-with-imposed-bindings (body *env*)
+(defmacro with-imposed-bindings (&body body)
   `(locally ,@body)
   #+sbcl
   (destructuring-bind ((binder bindings &rest binder-body))
@@ -63,10 +60,7 @@
        (,binder ,bindings 
 		,@binder-body))))
 
-(defmacro without-package-locking (&body body &environment *env*)
-  (call-without-package-locking body *env*))
-
-(defun call-without-package-locking (body *env*)
+(defmacro without-package-locking (&body body)
   `(
     #. (progn 'progn
 	      #+sbcl 'sb-ext:without-package-locks)
@@ -82,6 +76,9 @@
 	  ,@(loop for sym in syms
 		  collect `(gethash ',sym *form-handler*)
 		  collect `',func))))))
+
+(defun e-list (list)
+  (mapcar 'e list))
 
 (defhandler (progn locally) (progn &rest body)
   `(list ',progn
@@ -321,9 +318,6 @@
 	  (funcall *macroexpand-hook* cm form *env*)
 	  form)))
 
-(defun e-list (list)
-  (mapcar 'e list))
-
 (defun e (form)
   (flet ((handle (form)
 	   (apply (form-handler (first form)) form)))
@@ -346,47 +340,13 @@
 		       `',form)))))))))
 
 (defmacro m (form &environment *env*)
-  (call-m form *env*))
-
-(defun call-m (form *env*)
-  (declare (ignore *env*))
   (e form))
 
 (defmacro m-list (&body body &environment *env*)
-  (call-m-list body *env*))
-
-(defun call-m-list (body *env*)
-  (declare (ignore *env*))
   `(list ,@(e-list body)))
 
-(defun walk-tree (fn tree)
-  (funcall fn tree
-	   (lambda (branch)
-	     (mapcar (lambda (branch)
-		       (walk-tree fn branch))
-		     branch))))
-
-(defun macroexpand-all-except-macrobindings (body env)
-  (walk-tree
-   (lambda (subform cont)
-     (let ((expansion (macroexpand subform env)))
-       (if (and (consp expansion)
-		(not (member (car expansion)
-			     '(declare))))
-	   (if (member (car expansion)
-		       '(macrolet symbol-macrolet))
-	       ;; ignore macrolet and symbol-macrolet
-	       `(,(car expansion) ,(cadr expansion)
-		  ,@(funcall cont (cddr expansion)))
-	       (funcall cont expansion))
-	   expansion)))
-   body))
-
 (defun macroexpand-dammit (form &optional *env*)
-  (let ((evalform (e form)))
-    (macroexpand-all-except-macrobindings
-     (eval evalform)
-     *env*)))
+  (eval (e form)))
 
 (defmacro macroexpand-dammit-as-macro (form)
   `(m ,form))
