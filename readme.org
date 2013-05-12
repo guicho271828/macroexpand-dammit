@@ -1,0 +1,30 @@
+
+* Macroexpand dammit -- a portable code walker for Common Lisp
+
+Written by John Fremlin at MSI (http://www.msi.co.jp) Released
+into the public domain. 
+
+    http://john.freml.in/macroexpand-dammit
+
+Transforms code to return a quoted version its macroexpansion
+using the host lisp to implicitly augment the lexical environment.
+Expands macros, macrolets, symbol-macros, symbol-macrolets, and
+compiler-macros.  Removes macrolets and symbol-macrolets.
+
+Supports a few non-standard special forms for current (2009) Lisps.
+
+Lightly tested on SBCL 1.0.29, ClozureCL 1.4-pre, Lispworks 5.1,
+Allegro 8.1
+
+
+- 20100301 do not totally discard macrolet bodies (doh), as 
+  reported by mathrick on #lisp
+
+- 20100701 correct the mistaken loop bindings to remove warnings for CCL. 
+  reported by Daniel Gackle
+
+- 20130512 fixed a bug caused by nested macrolets and the timing of
+  the evaluation. Added a few test
+  cases which passes in the new version and not in the older version.
+  Tested on sbcl 1.1.6.15
+
