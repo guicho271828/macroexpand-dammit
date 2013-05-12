@@ -36,3 +36,4 @@
 	      (print (d))
 	      (print (d))))))))
 
+(run! :macroexpand-dammit-test)
