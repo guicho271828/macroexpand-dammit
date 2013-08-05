@@ -45,7 +45,7 @@
 ;;  which is not 
 ;; EQUALP
 ;;  to 
-;; ((PROGN (PRINT (D)) (PRINT (D))))
+;; ((PROGN (PRINT (D)) (PRINT (A))))
 
 ;; The original version of macroexpand-dammit stops expanding the form
 ;; 
@@ -59,9 +59,11 @@
 ;; EVAL.  ANSI Common Lisp doesn't have EVAL-IN-LEXENV (which some
 ;; implementation has) and EVAL doesn't take &environment argument.
 ;; Obviously EVAL doesn't recognize the lexical environment containing
-;; the macro-function of D, therefore D remains without expansion.  On
-;; the other hand, since the macro definition of E exists in the form
-;; E is always expanded.
+;; the macro-function of D, therefore D remains without expansion. 
+
+;; Since the macro definition of E exists in the form
+;; E is always expanded. However again, the definition of A is ignored
+;; and the test fails.
 ;; 
 ;; The fixed version expands both D and E.
 
