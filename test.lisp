@@ -96,6 +96,27 @@ which was not handled collectly in my version."
                                          (declare (ignore a b)))))))))
 
 
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf *print-circle* t))
+
+(test walk-tree
+  "testing the helper function (circular-list compatible tree walker)"
+  (let ((*print-circle* t)
+        (counter 0))
+    (finishes
+      (macroexpand-dammit::walk-tree
+       (lambda (subform cont)
+         (is (< counter 10))
+         (typecase subform
+           (cons
+            (funcall cont subform))
+           (atom
+            (print subform)
+            (incf counter))))
+       '(1 (2 3) (4 (5 6) 7 #1=(8 9 . #1#)))))
+    (is (= 9 counter))))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun wrap (form)
     (let ((flagsym (gensym "FLAG")))
@@ -111,18 +132,32 @@ which was not handled collectly in my version."
   (finishes
     (eval (wrap `(progn (macro) :a))))
   (signals error
-    (eval (wrap `(progn (macro) (macro) :a))))) 
+    (eval (wrap `(progn #1=(macro) #1# :a))))
+  (signals error
+    (eval (wrap `(progn (macro) (macro) :a)))))
 
-(test (issue3-circular-forms :depends-on wrap)
+(test (issue3-circular-forms-1 :depends-on (and wrap walk-tree))
   "Ensures that the expansion of circular forms does finish."
-  (let ((circular (cons `(macro) nil)))
+  (let ((circular (cons `(macro) nil))
+        (*print-circle* t))
     (setf (cdr circular) circular)
-    (dolist (head '(progn quote)) ; future test for the other special symbols
-      (let ((*print-circle* t)
-            (form (wrap `(,head ,circular))))
+    (dolist (head '(quote))
+      (let ((form (wrap `(,head ,circular))))
         (finishes
           (pprint form)
+          (pprint (macroexpand-dammit::e form))
           (macroexpand-dammit form))))))
+
+;; (test (issue3-circular-forms-2 :depends-on (and wrap walk-tree))
+;;   (let ((circular (cons `(macro) nil))
+;;         (*print-circle* t))
+;;     (setf (cdr circular) circular)
+;;     (dolist (head '(progn))
+;;       (let ((form (wrap `(,head ,@circular))))
+;;         (finishes
+;;           (pprint form)
+;;           (pprint (macroexpand-dammit::e form))
+;;           (macroexpand-dammit form))))))
 
 (run! :macroexpand-dammit-test)
 

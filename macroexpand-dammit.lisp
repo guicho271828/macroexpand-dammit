@@ -344,12 +344,22 @@
 (defmacro m-list (&body body &environment *env*)
   `(list ,@(e-list body)))
 
-(defun walk-tree (fn tree)
+(defun walk-tree (fn tree &optional (cache (make-hash-table :test 'eq)))
   (funcall fn tree
-	   (lambda (branch)
-	     (mapcar (lambda (branch)
-		       (walk-tree fn branch))
-		     branch))))
+           ;; given as `cont'
+	   (lambda (subforms)
+             (%walk-tree-rec subforms fn cache))))
+
+(defun %walk-tree-rec (lst fn cache)
+  (if (endp lst) nil
+      (multiple-value-bind (value found) (gethash lst cache)
+        (if found value
+            (let* ((result (walk-tree fn (car lst) cache))
+                   (cell (cons result nil)))
+              (setf (gethash lst cache) cell) ;; cdr is not computed
+              (setf (cdr cell) ;; this is not stack-free... but is necessary for circular list
+                    (%walk-tree-rec (cdr lst) fn cache))
+              cell)))))
 
 (defun macroexpand-all-except-macrobindings (body env)
   (walk-tree
@@ -357,8 +367,7 @@
      (let ((expansion (macroexpand subform env)))
        (if (consp expansion)
            (case (first expansion)
-             (declare
-              expansion)
+             ((declare quote) expansion)
              ((macrolet symbol-macrolet)
               ;; ignore macrolet and symbol-macrolet
               `(,(first expansion) ,(second expansion)
@@ -378,7 +387,7 @@
                     expansion)))
              (t
               (funcall cont expansion)))
-	   expansion)))
+           expansion)))
    body))
 
 (defun macroexpand-dammit (form &optional *env*)
