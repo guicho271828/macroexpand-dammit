@@ -226,7 +226,7 @@
 	  bindings
 	(e `(let (,first)
 	      ,@(if rest
-		   `((,let* ,rest ,@body))
+		   `((,let* ,rest (locally ,@body)))
 		   body))))))
 
 (defhandler eval-when (eval-when situation &rest body)
