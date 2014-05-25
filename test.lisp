@@ -85,5 +85,21 @@
   (finishes
     (macroexpand-dammit '(defun (x) x))))
 
+
+;; issue 1 -- declare and style warning. It was also intended in the old version, but was not
+;; effective (handler-let* is actually never called with nil).
+;; At least I ensured that the declaration
+;; is wrapped in `locally`. However, style warnings are still signalled.
+(test issue1-let*-declare
+  (finishes
+    (handler-bind ((style-warning
+                    (lambda (c)
+                      (warn "style-warning signalled"))))
+      (compile nil
+               `(lambda ()
+                  ,(macroexpand-dammit '(let* ((a 1)
+                                               (b 2))
+                                         (declare (ignore a b)))))))))
+
 (run! :macroexpand-dammit-test)
 
