@@ -76,13 +76,9 @@
     (macroexpand-dammit '(sb-int:named-lambda a (x) x))))
 
 ;; issue 2 -- defun.
-;; Even after I fixed the issue above, it causes:
-;;   Unexpected Error: #<TYPE-ERROR expected-type: LIST datum: X>
-;;   The value X is not of type LIST...
-;; The same bug was confirmed even in the older version.
 (test issue2-defun
   (finishes
-    (macroexpand-dammit '(defun (x) x))))
+    (macroexpand-dammit '(defun a (x) x))))
 
 
 ;; issue 1 -- declare and style warning. It was also intended in the old version, but was not
