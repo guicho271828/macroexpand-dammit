@@ -356,15 +356,29 @@
   (walk-tree
    (lambda (subform cont)
      (let ((expansion (macroexpand subform env)))
-       (if (and (consp expansion)
-		(not (member (car expansion)
-			     '(declare))))
-	   (if (member (car expansion)
-		       '(macrolet symbol-macrolet))
-	       ;; ignore macrolet and symbol-macrolet
-	       `(,(car expansion) ,(cadr expansion)
-		  ,@(funcall cont (cddr expansion)))
-	       (funcall cont expansion))
+       (if (consp expansion)
+           (case (first expansion)
+             (declare
+              expansion)
+             ((macrolet symbol-macrolet)
+              ;; ignore macrolet and symbol-macrolet
+              `(,(first expansion) ,(second expansion)
+                 ,@(funcall cont (cddr expansion))))
+             (function
+              (let ((fname (second expansion)))
+                (if (consp fname)
+                    (case (first fname)
+                      (lambda 
+                          `(lambda ,(second fname)
+                             ,@(funcall cont (cddr fname))))
+                      #+sbcl
+                      (sb-int:named-lambda
+                          `(sb-int:named-lambda ,(second fname) ,(third fname)
+                             ,@(funcall cont (cdddr fname))))
+                      (t expansion))
+                    expansion)))
+             (t
+              (funcall cont expansion)))
 	   expansion)))
    body))
 

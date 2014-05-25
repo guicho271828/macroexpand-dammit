@@ -67,6 +67,23 @@
 ;; 
 ;; The fixed version expands both D and E.
 
-(run! :macroexpand-dammit-test)
 
+;; issue 2 -- (lambda ...) expands into (function (lambda ...)),
+;; which was not handled collectly in my version.
+(test issue2
+  (finishes
+    (macroexpand-dammit '(lambda (x) x)))
+  (finishes
+    (macroexpand-dammit '(sb-int:named-lambda a (x) x))))
+
+;; issue 2 -- defun.
+;; Even after I fixed the issue above, it causes:
+;;   Unexpected Error: #<TYPE-ERROR expected-type: LIST datum: X>
+;;   The value X is not of type LIST...
+;; The same bug was confirmed even in the older version.
+(test issue2-defun
+  (finishes
+    (macroexpand-dammit '(defun (x) x))))
+
+(run! :macroexpand-dammit-test)
 
