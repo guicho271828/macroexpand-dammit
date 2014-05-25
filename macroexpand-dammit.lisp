@@ -83,7 +83,7 @@
 (defhandler (progn locally) (progn &rest body)
   `(list ',progn
 	 ,@(e-list body)))
-	
+
 
 (defhandler let (let bindings &rest body)
   (let ((names (loop for binding in bindings 
@@ -118,7 +118,6 @@
 		      (destructuring-bind
 			    (var &optional (val nil val-present-p) present-var)
 			  (force-list lambda-arg)
-				 
 			(prog1
 			    (if (listp lambda-arg)
 				`(list ',var ,@(when val-present-p `((car ,(binding-vars val)))) 

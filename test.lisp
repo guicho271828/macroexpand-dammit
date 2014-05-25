@@ -23,7 +23,6 @@
 (test nested2
   "testing highly nested macrolets 2nd. error case in 20100701"
   (macrolet ((a () :b))
-    
     (macrolet
 	((c (&body body &environment env)
 	   (let ((expansion (macroexpand-dammit body env))) ; <-+
@@ -68,22 +67,21 @@
 ;; The fixed version expands both D and E.
 
 
-;; issue 2 -- (lambda ...) expands into (function (lambda ...)),
-;; which was not handled collectly in my version.
 (test issue2
+  "issue 2 -- (lambda ...) expands into (function (lambda ...)),
+which was not handled collectly in my version."
   (finishes
     (macroexpand-dammit '(lambda (x) x)))
   (finishes
-    (macroexpand-dammit '(sb-int:named-lambda a (x) x))))
-
-;; issue 2 -- defun.
-(test issue2-defun
+    (macroexpand-dammit '(sb-int:named-lambda a (x) x)))
   (finishes
     (macroexpand-dammit '(defun a (x) x))))
 
-
-;; issue 1 -- declare and style warning. It was also intended in the old version, but was not
-;; effective (handler-let* is actually never called with nil).
+;; issue 1 -- let*, declaration and style warning.
+;; Authors of the previous version might have noticed the same problem,
+;; which can be seen in the definition of (defhandler let* ...)
+;; However their solution was not
+;; effective because handler-let* is actually never called with nil.
 ;; At least I ensured that the declaration
 ;; is wrapped in `locally`. However, style warnings are still signalled.
 (test issue1-let*-declare
@@ -96,6 +94,35 @@
                   ,(macroexpand-dammit '(let* ((a 1)
                                                (b 2))
                                          (declare (ignore a b)))))))))
+
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun wrap (form)
+    (let ((flagsym (gensym "FLAG")))
+      (setf (symbol-value flagsym) nil)
+      `(macrolet ((macro ()
+                    (if (symbol-value ',flagsym)
+                        (error "(macro) is expanded more than twice!")
+                        (setf (symbol-value ',flagsym) t))))
+         ,form))))
+
+(test wrap
+  "testing the helper function"
+  (finishes
+    (eval (wrap `(progn (macro) :a))))
+  (signals error
+    (eval (wrap `(progn (macro) (macro) :a))))) 
+
+(test (issue3-circular-forms :depends-on wrap)
+  "Ensures that the expansion of circular forms does finish."
+  (let ((circular (cons `(macro) nil)))
+    (setf (cdr circular) circular)
+    (dolist (head '(progn quote)) ; future test for the other special symbols
+      (let ((*print-circle* t)
+            (form (wrap `(,head ,circular))))
+        (finishes
+          (pprint form)
+          (macroexpand-dammit form))))))
 
 (run! :macroexpand-dammit-test)
 
