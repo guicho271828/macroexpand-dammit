@@ -68,7 +68,7 @@
 
 (defmacro defhandler (symbol lambda-list &body body)
   (let ((syms (force-list symbol)))
-    (let ((func (intern (format nil "~A~A" 'hander- (first syms)))))
+    (let ((func (intern (format nil "~A~A" 'handler- (first syms)))))
       `(progn
 	 (defun ,func ,lambda-list
 	   ,@body)
@@ -78,7 +78,7 @@
 		  collect `',func))))))
 
 (defun e-list (list)
-  (mapcar 'e list))
+  (mapcar #'e list))
 
 (defhandler (progn locally) (progn &rest body)
   `(list ',progn
