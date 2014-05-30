@@ -136,6 +136,7 @@ which was not handled collectly in my version."
   (signals error
     (eval (wrap `(progn (macro) (macro) :a)))))
 
+;; (quote (macro) (macro) (macro) ...)
 (test (issue3-circular-forms-1 :depends-on (and wrap walk-tree))
   "Ensures that the expansion of circular forms does finish."
   (let ((circular (cons `(macro) nil))
@@ -145,19 +146,23 @@ which was not handled collectly in my version."
       (let ((form (wrap `(,head ,circular))))
         (finishes
           (pprint form)
-          (pprint (macroexpand-dammit::e form))
           (macroexpand-dammit form))))))
 
-;; (test (issue3-circular-forms-2 :depends-on (and wrap walk-tree))
-;;   (let ((circular (cons `(macro) nil))
-;;         (*print-circle* t))
-;;     (setf (cdr circular) circular)
-;;     (dolist (head '(progn))
-;;       (let ((form (wrap `(,head ,@circular))))
-;;         (finishes
-;;           (pprint form)
-;;           (pprint (macroexpand-dammit::e form))
-;;           (macroexpand-dammit form))))))
+
+;; (quote
+;;  #2=(progn (macro) <----------+--- same cons
+;;         #2=(progn (macro) <---+
+;;                #2=(progn (macro) ...))))
+
+(test (issue3-circular-forms-2 :depends-on (and wrap walk-tree))
+  (let ((circular '(progn (macro)))
+        (*print-circle* t))
+    (setf (cddr circular) (cons circular nil))
+    (dolist (head '(quote))
+      (let ((form (wrap `(,head ,circular))))
+        (finishes
+          (pprint form)
+          (macroexpand-dammit form))))))
 
 (run! :macroexpand-dammit-test)
 
