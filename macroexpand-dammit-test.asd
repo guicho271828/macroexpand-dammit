@@ -7,5 +7,11 @@
 
 (defsystem macroexpand-dammit-test
   :depends-on (:macroexpand-dammit :fiveam)
+  :serial t
   :components
-  ((:file :test)))
+  ((:file :test)
+   (:file :issue-1-again))
+  :perform (load-op :after (op c) 
+		    (eval (read-from-string "(fiveam:run! :macroexpand-dammit-test)"))
+		    (asdf:clear-system c)))
+
