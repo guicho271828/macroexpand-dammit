@@ -217,17 +217,34 @@
             (m-list ,@body))))
     ,@(mapcar #'make-binding-form-builder-form bindings)))
 
+(defhandler partially-expanded-let* (_ expanded-bindings
+                                       remaining-bindings
+                                       body)
+  (declare (ignore _))
+  (if (not remaining-bindings)
 
+      `(funcall
+        (lambda (eb body2)
+          `(let* ,eb
+             ,@body2))
+        ',expanded-bindings             ; == '((a 1) (b 2))
+        (list ,@(e-list body)))
+
+      (destructuring-bind (first &rest rest) remaining-bindings
+        `(funcall
+          (lambda (eb bfbf rest2 body2)
+            `(partially-expanded-let*
+                 (,@eb ,bfbf)
+                 ,rest2
+               ,body2))
+          ',expanded-bindings
+          ,(make-binding-form-builder-form first)
+          ',rest
+          ',body))))
 
 (defhandler let* (let* bindings &rest body)
-  (if (not bindings)
-      (e `(locally ,@body))
-      (destructuring-bind (first &rest rest)
-	  bindings
-	(e `(let (,first)
-	      ,@(if rest
-		   `((,let* ,rest (locally ,@body)))
-		   body))))))
+  (declare (ignore let*))
+  (e `(partially-expanded-let* () ,bindings ,body)))
 
 (defhandler eval-when (eval-when situation &rest body)
   `(list ',eval-when ',situation
