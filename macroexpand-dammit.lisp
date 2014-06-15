@@ -231,12 +231,14 @@
         (list ,@(e-list body)))
 
       (destructuring-bind (first &rest rest) remaining-bindings
+        ;; (format t "~&environment: ~a~&" *env*)
         `(funcall
           (lambda (eb bfbf rest2 body2)
-            `(partially-expanded-let*
-                 (,@eb ,bfbf)
-                 ,rest2
-               ,body2))
+            (let ((*env* ,*env*))
+              (eval (e `(partially-expanded-let*
+                            (,@eb ,bfbf)
+                            ,rest2
+                          ,body2)))))
           ',expanded-bindings
           ,(make-binding-form-builder-form first)
           ',rest
