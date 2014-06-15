@@ -50,15 +50,19 @@
 	  (t
 	   name))))
 
+#-sbcl
 (defmacro with-imposed-bindings (&body body)
-  `(locally ,@body)
-  #+sbcl
-  (destructuring-bind ((binder bindings &rest binder-body))
-      body
-    `(locally
-	 (declare (sb-ext:disable-package-locks ,@(mapcar 'binding-to-symbol bindings)))
-       (,binder ,bindings 
-		,@binder-body))))
+  `(locally ,@body))
+
+#+sbcl
+(defmacro with-imposed-bindings ((binder bindings &body body))
+  `(locally
+       (declare (sb-ext:disable-package-locks ,@(mapcar #'binding-to-symbol bindings)))
+     (,binder ,bindings 
+              ,@body)))
+
+;; e.g. binder=let, bindings=((a 1)(b 2))
+
 
 (defmacro without-package-locking (&body body)
   `(
