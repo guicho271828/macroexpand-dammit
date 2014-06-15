@@ -21,6 +21,14 @@
     (signals error
       (funcall compiled-fn))))
 
+
+(defmacro expansion-is-correct (&body body)
+  (format *error-output* "~&expanding ~a" body)
+  `(= (progn ,@body)
+      (eval
+       (macroexpand-dammit
+        '(progn ,@body)))))
+
 (test issue1-again
   (let ((*compile-time-counter* 0))
     (let* ((expanded
@@ -30,31 +38,6 @@
            (compiled-fn (compile nil `(lambda () ,expanded))))
       (is (= 3 (funcall compiled-fn)))
       (is (= 2 *compile-time-counter*))))
-
-  ;; symbol-macrolet shadowed by let
-  (is (=
-       (symbol-macrolet ((a 100))
-         (let* ((a 1) (b (+ a 2)))
-           (+ a b)))
-       (eval
-        (macroexpand-dammit
-         '(symbol-macrolet ((a 100))
-           (let* ((a 1)
-                  (b (+ a 2)))
-             (+ a b)))))))
-
-  ;; let shadowed by symbol-macrolet
-  (is (=
-       (let ((a 1))
-         (symbol-macrolet ((a 100))
-           (let ((b (+ a 2)))
-             (+ a b))))
-       (eval
-        (macroexpand-dammit
-         '(let ((a 1))
-           (symbol-macrolet ((a 100))
-             (let ((b (+ a 2)))
-               (+ a b))))))))
 
   (let ((*compile-time-counter* 0))
     (let* ((expanded
@@ -66,3 +49,50 @@
            (compiled-fn (compile nil `(lambda () ,expanded))))
       (is (= 4 (funcall compiled-fn)))
       (is (= 2 *compile-time-counter*)))))
+
+(test symbol-macrolet-shadowed-by-let
+  (is (expansion-is-correct 
+        (symbol-macrolet ((a 100))
+          (let* ((a 1) (b (+ a 2)))
+            (+ a b)))))
+
+  (is (expansion-is-correct 
+        (symbol-macrolet ((a 100))
+          (let* ((b (+ a 2)))
+            (+ a b)))))
+
+  (is (expansion-is-correct 
+        (symbol-macrolet ((a 100))
+          (let ((b (+ a 2)))
+            (+ a b)))))
+
+  ;; let shadowed by symbol-macrolet
+  (is (expansion-is-correct 
+        (let ((a 1))
+          (symbol-macrolet ((a 100))
+            (let ((b (+ a 2)))
+              (+ a b))))))
+
+  (is (expansion-is-correct 
+        (let ((a 1))
+          (let ((b (+ a 2)))
+            (symbol-macrolet ((a 100))
+              (+ a b))))))
+
+  (is (expansion-is-correct 
+        (let ((a 1))
+          (symbol-macrolet ((a 100))
+            (let ((b (+ a 2)))
+              (+ a b))))))
+
+  (is (expansion-is-correct 
+        (symbol-macrolet ((a 100))
+          (let* ((a 1)
+                 (b (+ a 2)))
+            (+ a b)))))
+
+  (is (expansion-is-correct 
+        (let* ((a 1)
+               (b (+ a 2)))
+          (symbol-macrolet ((a 100))
+            (+ a b))))))
