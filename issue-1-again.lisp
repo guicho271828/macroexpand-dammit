@@ -49,11 +49,12 @@
          (symbol-macrolet ((a 100))
            (let ((b (+ a 2)))
              (+ a b))))
-       (macroexpand-dammit
-        '(let ((a 1))
-          (symbol-macrolet ((a 100))
-            (let ((b (+ a 2)))
-              (+ a b)))))))
+       (eval
+        (macroexpand-dammit
+         '(let ((a 1))
+           (symbol-macrolet ((a 100))
+             (let ((b (+ a 2)))
+               (+ a b))))))))
 
   (let ((*compile-time-counter* 0))
     (let* ((expanded
