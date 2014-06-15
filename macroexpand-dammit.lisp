@@ -88,26 +88,6 @@
   `(list ',progn
 	 ,@(e-list body)))
 
-
-(defhandler let (let bindings &rest body)
-  (let ((names (loop for binding in bindings 
-		     collect 
-		     (force-first binding))))
-    `(list*
-      ',let
-      (list 
-       ,@(loop for binding in bindings
-	       collect 
-	       (if (symbolp binding)
-		   `',binding
-		   `(list ',(first binding)
-			  ,@(e-list (rest binding))))))
-      (with-imposed-bindings
-	(,let ,names
-	  (declare (ignorable ,@names))
-	  (m-list ,@body))))))
-
-
 (defun dump-fbinding (name lambda-list &rest body)
   (let (bound-vars)
     (labels (
@@ -221,6 +201,23 @@
        (list* ',labels
 	      ,(dump-fbindings bindings)
 	      (m-list ,@body)))))
+
+
+(defun make-binding-form-builder-form (binding)
+  (if (symbolp binding)
+      binding
+      `(list ',(first binding) ,(e (second binding)))))
+
+(defhandler let (let bindings &rest body)
+  (declare (ignore let))
+  `(funcall
+    (lambda (&rest binding-forms)
+      `(let ,binding-forms
+         ,@(with-imposed-bindings
+            (m-list ,@body))))
+    ,@(mapcar #'make-binding-form-builder-form bindings)))
+
+
 
 (defhandler let* (let* bindings &rest body)
   (if (not bindings)
