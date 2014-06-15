@@ -164,5 +164,3 @@ which was not handled collectly in my version."
           (pprint form)
           (macroexpand-dammit form))))))
 
-(run! :macroexpand-dammit-test)
-
