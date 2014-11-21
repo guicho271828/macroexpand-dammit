@@ -86,9 +86,13 @@
 
 
 (defhandler let (let bindings &rest body)
-  (let ((names (loop for binding in bindings 
-		     collect 
-		     (force-first binding))))
+  (let* ((names (loop for binding in bindings 
+                   collect 
+                     (force-first binding)))
+         (symbol-macrolet-names
+          (loop for name in names
+             when (nth-value 1 (macroexpand-1 name *env*))
+             collect name)))
     `(list*
       ',let
       (list 
@@ -99,8 +103,8 @@
 		   `(list ',(first binding)
 			  ,@(e-list (rest binding))))))
       (with-imposed-bindings
-	(,let ,names
-	  (declare (ignorable ,@names))
+	(,let ,symbol-macrolet-names
+	  (declare (ignorable ,@symbol-macrolet-names))
 	  (m-list ,@body))))))
 
 
