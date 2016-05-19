@@ -1,6 +1,8 @@
 
 * Macroexpand dammit -- a portable code walker for Common Lisp
 
+*I do not generally recommend this library, either the original version or this version, because both contain bugs.*
+
 Written by John Fremlin at MSI (http://www.msi.co.jp) Released
 into the public domain. 
 
